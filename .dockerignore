@@ -1,0 +1,10 @@
+.git
+.env*
+config/local.php
+storage
+uploads
+tests/.runtime*
+deploy/staging
+*.pem
+*.key
+*.gz

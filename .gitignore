@@ -1,0 +1,6 @@
+/config/local.php
+/storage/*
+!/storage/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
+/tests/.runtime*
