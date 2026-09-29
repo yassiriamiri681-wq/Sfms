@@ -31,6 +31,11 @@ jobs:
         run: |
           mkdir -p storage/sessions uploads
           php tests/money.php
+          php tests/integration.php
+          php tests/concurrency.php
+          php -r '$p=new PDO(getenv("SCHOOLLEDGER_TEST_DSN"),getenv("SCHOOLLEDGER_TEST_USER"),getenv("SCHOOLLEDGER_TEST_PASSWORD")); $p->exec("CREATE DATABASE sfms_batches_test");'
+          export SCHOOLLEDGER_TEST_DSN='pgsql:host=127.0.0.1;port=5432;dbname=sfms_batches_test;'
+          echo "SCHOOLLEDGER_TEST_DSN=$SCHOOLLEDGER_TEST_DSN" >> "$GITHUB_ENV"
           php tests/batches.php
           php tests/image-storage.php
       - name: HTTP, security and concurrency checks
@@ -41,7 +46,6 @@ jobs:
           php tests/navigation.php
           php tests/security.php
           php tests/batch-http.php
-          php tests/concurrency.php
       - name: Recovery verification
         run: |
           php -r '$p=new PDO(getenv("SCHOOLLEDGER_TEST_DSN"),getenv("SCHOOLLEDGER_TEST_USER"),getenv("SCHOOLLEDGER_TEST_PASSWORD")); $p->exec("CREATE DATABASE sfms_recovery_test");'
