@@ -46,6 +46,7 @@ jobs:
         run: |
           php -r '$p=new PDO(getenv("SCHOOLLEDGER_TEST_DSN"),getenv("SCHOOLLEDGER_TEST_USER"),getenv("SCHOOLLEDGER_TEST_PASSWORD")); $p->exec("CREATE DATABASE sfms_recovery_test");'
           php tests/recovery.php
+          php tests/render-bootstrap.php
       - name: Failure diagnostics
         if: failure()
         run: cat storage/php-error.log storage/http-server.log 2>/dev/null || true
