@@ -54,3 +54,10 @@ jobs:
       - name: Failure diagnostics
         if: failure()
         run: cat storage/php-error.log storage/http-server.log 2>/dev/null || true
+  container:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t sfms-check .
+      - run: docker run --rm sfms-check apache2ctl -t
+      - run: docker run --rm sfms-check php -r 'foreach (["pdo_pgsql","pdo_mysql","mbstring","gd","fileinfo","zlib"] as $e) if (!extension_loaded($e)) throw new RuntimeException($e);'
