@@ -1,5 +1,18 @@
 # Verification performed — 27 September 2026
 
+## PostgreSQL continuation — 29 September 2026
+
+GitHub Actions run 36537180231 completed successfully against PostgreSQL 18.
+It covered money parsing, baseline integration, concurrent payments, reviewed batches,
+private database image storage, HTTP routes, navigation, security, batch HTTP,
+tenant backup recovery, and atomic first-use initialization. The initialization test
+also verified that a subsequent restart preserves the original administrator password.
+All databases and accounts in this workflow are synthetic, isolated from Neon and Joyas.
+This result verifies the PostgreSQL application workflows; live Render/Neon connectivity
+and deployment still require their own acceptance checks.
+
+The earlier MySQL results below remain historical verification for that driver.
+
 Environment: Windows, Laragon PHP 8.3.30, MySQL 8.4.3. All test schools, students and payments were synthetic and stored in dedicated `_test` databases, separate from the clean local installation.
 
 ## Automated results

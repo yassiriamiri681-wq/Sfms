@@ -1,6 +1,8 @@
 # SchoolLedger
 
-A PHP 8.3 / MySQL 8.0.16+ school fee application with isolated school workspaces, database-backed permissions, category-specific billing, an immutable payment history, receipts, statements, reporting, and private tenant backups.
+A PHP 8.3 school fee application supporting MySQL 8.0.16+ and PostgreSQL, with isolated school workspaces, database-backed permissions, category-specific billing, an immutable payment history, receipts, statements, reporting, and private tenant backups.
+
+For Render Free with an external Neon PostgreSQL database, see [deployment instructions](deploy/render/README.md). PostgreSQL 18 is exercised in the automated workflow. Local MySQL installation continues to use the instructions below. Existing local data is not automatically transferred when creating a new Neon database.
 
 Read [the architecture and relationships](docs/ARCHITECTURE.md) before extending modules. [The feature inventory](docs/FEATURES.md) distinguishes implemented workflows from future commercial integrations.
 
