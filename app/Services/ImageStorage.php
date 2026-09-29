@@ -13,14 +13,18 @@ final class ImageStorage {
         self::validate($name);
         if (strlen($bytes) > 4 * 1024 * 1024) throw new \DomainException('Processed image exceeds 4 MB. Choose a smaller image.');
         if (self::database()) {
-            DB::insert('stored_images', ['school_id'=>$schoolId,'name'=>$name,'contents'=>$bytes]);
+            if(DB::postgres()) DB::run("INSERT INTO stored_images (school_id,name,contents) VALUES (?,?,decode(?,'hex'))",[$schoolId,$name,bin2hex($bytes)]);
+            else DB::insert('stored_images', ['school_id'=>$schoolId,'name'=>$name,'contents'=>$bytes]);
         } elseif (file_put_contents(ROOT.'/uploads/'.$name, $bytes, LOCK_EX) === false) {
             throw new \RuntimeException('Unable to save image.');
         }
     }
     public static function get(int $schoolId, string $name): ?string {
         if (!preg_match('/^[a-f0-9]{40}\.png$/', $name)) return null;
-        if (self::database()) return DB::one('SELECT contents FROM stored_images WHERE school_id=? AND name=?', [$schoolId,$name])['contents'] ?? null;
+        if (self::database()) {
+            $row=DB::one(DB::postgres()?"SELECT encode(contents,'hex') contents FROM stored_images WHERE school_id=? AND name=?":'SELECT contents FROM stored_images WHERE school_id=? AND name=?',[$schoolId,$name]);
+            return $row ? (DB::postgres()?hex2bin($row['contents']):$row['contents']) : null;
+        }
         $path=ROOT.'/uploads/'.$name;
         return is_file($path) ? file_get_contents($path) : null;
     }

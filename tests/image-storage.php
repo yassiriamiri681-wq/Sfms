@@ -6,7 +6,7 @@ use App\Services\ImageStorage;
 $fixture=json_decode(file_get_contents(ROOT.'/tests/.runtime-fixture.json'),true);
 if(!preg_match('/dbname=[a-zA-Z0-9_]+_test;/', $fixture['dsn'])) throw new RuntimeException('Test database required.');
 DB::configure(['dsn'=>$fixture['dsn'],'user'=>getenv('SCHOOLLEDGER_TEST_USER')?:'root','password'=>getenv('SCHOOLLEDGER_TEST_PASSWORD')?:'']);
-DB::connection()->exec(file_get_contents(ROOT.'/database/image-storage.sql'));
+if(!DB::postgres()) DB::connection()->exec(file_get_contents(ROOT.'/database/image-storage.sql'));
 putenv('SCHOOLLEDGER_IMAGE_STORAGE=database');
 $sid=(int)$fixture['school']; $name=bin2hex(random_bytes(20)).'.png';
 $bytes=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==');

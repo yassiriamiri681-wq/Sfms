@@ -17,7 +17,7 @@ try { $app->run(); }
 catch(\Throwable $error) {
     ob_clean();
     if($error instanceof \DomainException) { if(http_response_code()<400) http_response_code(422); $message=$error->getMessage(); }
-    elseif($error instanceof \PDOException && $error->getCode()==='23000') { http_response_code(409); $message='This record already exists, is already assigned, or references an invalid record. No changes were saved.'; }
+    elseif($error instanceof \PDOException && str_starts_with((string)$error->getCode(),'23')) { http_response_code(409); $message='This record already exists, is already assigned, or references an invalid record. No changes were saved.'; }
     else { http_response_code(500); $ref=bin2hex(random_bytes(4)); error_log($ref.' '.$error); $message='Unable to complete this request. Contact your administrator with reference '.$ref.'.'; }
     view('error',['message'=>$message]);
 }

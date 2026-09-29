@@ -1,0 +1,51 @@
+name: PostgreSQL verification
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: sfms_test_only
+          POSTGRES_DB: sfms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 12
+    env:
+      SCHOOLLEDGER_TEST_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=sfms_test;'
+      SCHOOLLEDGER_TEST_USER: postgres
+      SCHOOLLEDGER_TEST_PASSWORD: sfms_test_only
+      SCHOOLLEDGER_TEST_URL: http://127.0.0.1:8081
+      SCHOOLLEDGER_IMAGE_STORAGE: database
+      SCHOOLLEDGER_RECOVERY_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=sfms_recovery_test;'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP runtime
+        run: sudo apt-get update && sudo apt-get install -y php-cli php-pgsql php-mbstring php-gd php-curl
+      - name: Core and reviewed batch tests
+        run: |
+          mkdir -p storage/sessions uploads
+          php tests/money.php
+          php tests/batches.php
+          php tests/image-storage.php
+      - name: HTTP, security and concurrency checks
+        run: |
+          php -r '$c=["dsn"=>getenv("SCHOOLLEDGER_TEST_DSN"),"user"=>getenv("SCHOOLLEDGER_TEST_USER"),"password"=>getenv("SCHOOLLEDGER_TEST_PASSWORD"),"production"=>false,"timezone"=>"Africa/Dar_es_Salaam"]; file_put_contents("config/local.php","<?php return ".var_export($c,true).";");'
+          php -S 127.0.0.1:8081 -t public public/router.php >storage/http-server.log 2>&1 &
+          for i in $(seq 1 20); do curl -fsS 'http://127.0.0.1:8081/?page=login' >/dev/null && break || sleep 1; done
+          php tests/navigation.php
+          php tests/security.php
+          php tests/batch-http.php
+          php tests/concurrency.php
+      - name: Recovery verification
+        run: |
+          php -r '$p=new PDO(getenv("SCHOOLLEDGER_TEST_DSN"),getenv("SCHOOLLEDGER_TEST_USER"),getenv("SCHOOLLEDGER_TEST_PASSWORD")); $p->exec("CREATE DATABASE sfms_recovery_test");'
+          php tests/recovery.php
+      - name: Failure diagnostics
+        if: failure()
+        run: cat storage/php-error.log storage/http-server.log 2>/dev/null || true

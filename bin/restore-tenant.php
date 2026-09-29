@@ -23,6 +23,10 @@ try {
         foreach(Backup::TABLES as $table) foreach($data['tables'][$table] as $row) { if((int)$row['school_id']!==$sid) throw new RuntimeException('Backup contains a foreign school record.'); DB::insert($table,$row); }
         foreach($data['role_permissions'] as $r) DB::insert('role_permissions',$r);
         foreach($data['images'] as $name=>$image) { if(!preg_match('/^[a-f0-9]{40}\.png$/',$name)) throw new RuntimeException('Invalid image filename.'); $bytes=base64_decode($image,true); if($bytes===false) throw new RuntimeException('Image restore failed.'); \App\Services\ImageStorage::put($sid,$name,$bytes); }
+        if(DB::postgres()) {
+            // Explicit restored IDs must not collide with future generated IDs.
+            foreach(['schools','permissions',...Backup::TABLES] as $table) DB::connection()->exec("SELECT setval(pg_get_serial_sequence('$table','id'),COALESCE((SELECT MAX(id) FROM $table),1),(SELECT COUNT(*)>0 FROM $table))");
+        }
     });
     echo "Tenant restored to the recovery database. Validate statements and receipts before any migration to production.\n";
 } catch(Throwable $e) { fwrite(STDERR,"Restore failed: ".$e->getMessage()."\n"); exit(1); }

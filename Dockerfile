@@ -1,7 +1,7 @@
 FROM php:8.3-apache-bookworm
-RUN apt-get update && apt-get install -y --no-install-recommends libonig-dev libpng-dev libjpeg62-turbo-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libpq-dev libonig-dev libpng-dev libjpeg62-turbo-dev \
     && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring gd \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring gd \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /var/www/html
 ENV SCHOOLLEDGER_IMAGE_STORAGE=database

@@ -12,8 +12,8 @@ function ok(bool $value,string $label): void { global $checks; if(!$value) throw
 function rejects(callable $fn,string $label): void { try { $fn(); } catch(DomainException|PDOException) { ok(true,$label); return; } throw new RuntimeException('FAIL: accepted '.$label); }
 function latest(string $table): int { return (int)DB::one("SELECT MAX(id) id FROM $table")['id']; }
 try {
-    if(DB::all('SHOW TABLES')) throw new RuntimeException('Test database must be empty; this suite never clears an existing database.');
-    foreach(explode(';',file_get_contents(ROOT.'/database/schema.sql')) as $sql) if(trim($sql)) DB::connection()->exec($sql);
+    if(DB::tables()) throw new RuntimeException('Test database must be empty; this suite never clears an existing database.');
+    foreach(explode(';',file_get_contents(DB::schemaFile())) as $sql) if(trim($sql)) DB::connection()->exec($sql);
     foreach(Schools::PERMISSIONS as $code) DB::insert('permissions',['code'=>$code]);
     $password='Test-only-'.bin2hex(random_bytes(12));
     DB::insert('users',['name'=>'Test super administrator','email'=>'super@example.test','password_hash'=>password_hash($password,PASSWORD_DEFAULT),'is_super'=>1]);

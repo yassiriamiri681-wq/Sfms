@@ -48,7 +48,7 @@ final class Catalog {
             DB::one('SELECT id FROM fee_structures WHERE school_id=? AND id=? FOR UPDATE',[$sid,$id]);
             $type=Input::id($data,'fee_type_id'); Auth::owned('fee_types',$type); $amount=Money::parse(Input::text($data,'amount'));
             if($amount<=0) throw new \DomainException('Fee must be positive.');
-            DB::run('INSERT INTO fee_structure_items (school_id,fee_structure_id,fee_type_id,amount) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE amount=?',[$sid,$id,$type,$amount,$amount]); Auth::audit('fee_structure.changed','fee_structures',$id);
+            DB::upsert('fee_structure_items',['school_id'=>$sid,'fee_structure_id'=>$id,'fee_type_id'=>$type,'amount'=>$amount],['school_id','fee_structure_id','fee_type_id'],'amount'); Auth::audit('fee_structure.changed','fee_structures',$id);
         });
     }
     public static function removeItem(array $data): void { Auth::require('fees.manage'); DB::transaction(function () use($data) { $id=Input::id($data,'fee_structure_id'); Auth::owned('fee_structures',$id); DB::one('SELECT id FROM fee_structures WHERE school_id=? AND id=? FOR UPDATE',[Auth::schoolId(),$id]); DB::run('DELETE FROM fee_structure_items WHERE school_id=? AND fee_structure_id=? AND fee_type_id=?',[Auth::schoolId(),$id,Input::id($data,'fee_type_id')]); Auth::audit('fee_structure.changed','fee_structures',$id); }); }

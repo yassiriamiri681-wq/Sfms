@@ -13,7 +13,7 @@ final class Auth {
     public static function login(string $email, string $password): bool {
         $key = hash('sha256', strtolower(trim($email)) . '|' . ($_SERVER['REMOTE_ADDR'] ?? 'cli'));
         $result = DB::transaction(function () use ($email, $password, $key) {
-            DB::run('INSERT IGNORE INTO login_attempts (attempt_key, failures, started_at) VALUES (?,0,NOW())', [$key]);
+            DB::run(DB::postgres()?'INSERT INTO login_attempts (attempt_key, failures, started_at) VALUES (?,0,NOW()) ON CONFLICT (attempt_key) DO NOTHING':'INSERT IGNORE INTO login_attempts (attempt_key, failures, started_at) VALUES (?,0,NOW())', [$key]);
             $attempt = DB::one('SELECT * FROM login_attempts WHERE attempt_key=? FOR UPDATE', [$key]);
             if (strtotime($attempt['started_at']) < time()-900) { DB::run('UPDATE login_attempts SET failures=0, started_at=NOW() WHERE attempt_key=?', [$key]); $attempt['failures']=0; }
             if ((int)$attempt['failures'] >= 5) return null;
