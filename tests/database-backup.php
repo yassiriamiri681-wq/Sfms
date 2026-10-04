@@ -20,5 +20,5 @@ fwrite($pipes[0],$sql); fclose($pipes[0]);
 if(proc_close($process)!==0) throw new RuntimeException('SQL recovery failed.');
 $pdo=new PDO(str_replace('dbname='.$match[1],'dbname=sfms_backup_recovery_test',$dsn),$backupConfig['user'],$backupConfig['password']);
 $row=$pdo->query('SELECT amount, description FROM backup_fixture')->fetch(PDO::FETCH_ASSOC);
-if($row['amount']!=='123456789' || $row['description']!=='Synthetic backup fixture') throw new RuntimeException('Restored financial data mismatch.');
+if((int)$row['amount']!==123456789 || $row['description']!=='Synthetic backup fixture') throw new RuntimeException('Restored financial data mismatch.');
 echo "PostgreSQL compressed backup, repeated dump and SQL recovery checks passed.\n";
