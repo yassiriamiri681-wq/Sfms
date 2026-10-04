@@ -38,7 +38,7 @@ to stay within the provider's current free storage allowance.
 Render Free disks are ephemeral. Download backups to a separate device;
 do not rely on copies inside the web container. Sessions may expire after a restart.
 
-This deployment has not yet been built on Render or connected to an external database.
+The image includes PostgreSQL 18 `pg_dump` and enables daily database backups on the first authenticated visit. The Backups page reports completion and warns that Render local storage is temporary. These SQL backups are not durable until external backup storage is configured. For days without visits, schedule the backup CLI on server infrastructure. See `docs/DAILY-BACKUPS.md`.
 Never upload config/local.php, storage/, uploads/, or tests/.runtime* to GitHub.
 
 The existing local MySQL installation remains supported. This change installs a new

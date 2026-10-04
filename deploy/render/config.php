@@ -18,4 +18,7 @@ return [
     'ssl_ca' => str_starts_with($dsn,'mysql:')?$required('SCHOOLLEDGER_DB_SSL_CA'):null,
     'production' => true,
     'timezone' => 'Africa/Dar_es_Salaam',
+    'automatic_database_backup' => true,
+    'pg_dump_path' => '/usr/lib/postgresql/18/bin/pg_dump',
+    'backup_storage_ephemeral' => true,
 ];

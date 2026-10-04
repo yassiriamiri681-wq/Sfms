@@ -68,7 +68,7 @@ Integration tests require `SCHOOLLEDGER_TEST_DSN`, `SCHOOLLEDGER_TEST_USER`, and
 
 Authorized school users can create tenant JSON/gzip backups including uploaded images. To restore, create a **separate empty recovery database**, import `database/schema.sql` only (do not run the installer), point a separate recovery checkout's `config/local.php` at it, then run `php bin/restore-tenant.php path/to/backup.json.gz`. It refuses populated targets. Global actor references are restored as disabled archival identities, without exposing another school's users. Verify financial balances and access before migration. Files are restored outside the web root. Never upload a backup from an untrusted source.
 
-For complete disaster recovery, the deployment administrator must also schedule encrypted full MySQL backups (for example, `mysqldump --single-transaction --routines --triggers` using a protected option file) plus configuration and uploads. The web application does not execute shell commands or store database passwords in command arguments.
+The application now creates a full compressed database backup on the first authenticated page visit each day. It invokes the database dump client using temporary private credential files. The Render image includes PostgreSQL 18 client support. See [daily backups](docs/DAILY-BACKUPS.md) for setup and limitations. For backups even on days without visitors, schedule `php bin/backup-database.php` on the server. Durable offsite storage, encryption, configuration and file uploads still need operational backup arrangements; Render temporary files alone are insufficient for disaster recovery.
 
 ## Integration boundaries and remaining commercial work
 

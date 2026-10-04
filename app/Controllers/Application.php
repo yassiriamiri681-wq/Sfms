@@ -12,6 +12,10 @@ final class Application {
         }
         if(!Auth::user()) { if($page!=='login') redirect('login'); view('login'); return; }
         if(Auth::user()['school_id'] && !Auth::user()['school_active']) { $this->logout(); }
+        if($_SERVER['REQUEST_METHOD']==='GET' && $page!=='image') {
+            global $config;
+            \App\Services\DailyBackup::run($config);
+        }
         if($_SERVER['REQUEST_METHOD']==='POST') { $this->action((string)($_POST['action']??'')); return; }
         if($page==='login') redirect('dashboard');
         if(in_array($page,['platform','global-audit'],true)) {

@@ -31,6 +31,7 @@ jobs:
         run: |
           mkdir -p storage/sessions uploads
           php tests/money.php
+          php tests/daily-backup.php
           php tests/integration.php
           php tests/concurrency.php
           php -r '$p=new PDO(getenv("SCHOOLLEDGER_TEST_DSN"),getenv("SCHOOLLEDGER_TEST_USER"),getenv("SCHOOLLEDGER_TEST_PASSWORD")); $p->exec("CREATE DATABASE sfms_batches_test");'
@@ -56,8 +57,29 @@ jobs:
         run: cat storage/php-error.log storage/http-server.log 2>/dev/null || true
   container:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: sfms_test_only
+          POSTGRES_DB: sfms_backup_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t sfms-check .
       - run: docker run --rm sfms-check apache2ctl -t
       - run: docker run --rm sfms-check php -r 'foreach (["pdo_pgsql","pdo_mysql","mbstring","gd","fileinfo","zlib"] as $e) if (!extension_loaded($e)) throw new RuntimeException($e);'
+      - name: Full PostgreSQL backup and recovery
+        run: |
+          docker exec '${{ job.services.postgres.id }}' psql -U postgres -d sfms_backup_test -v ON_ERROR_STOP=1 -c "CREATE TABLE backup_fixture (amount bigint, description text); INSERT INTO backup_fixture VALUES (123456789, 'Synthetic backup fixture');"
+          docker exec '${{ job.services.postgres.id }}' psql -U postgres -d sfms_backup_test -v ON_ERROR_STOP=1 -c 'CREATE DATABASE sfms_backup_recovery_test'
+          docker run --rm --network host -v "$PWD/tests:/var/www/html/tests:ro" \
+            -e 'SCHOOLLEDGER_DSN=pgsql:host=127.0.0.1;port=5432;dbname=sfms_backup_test' \
+            -e SCHOOLLEDGER_DB_USER=postgres -e SCHOOLLEDGER_DB_PASSWORD=sfms_test_only \
+            -e 'SCHOOLLEDGER_TEST_DSN=pgsql:host=127.0.0.1;port=5432;dbname=sfms_backup_test' \
+            -e SCHOOLLEDGER_TEST_USER=postgres -e SCHOOLLEDGER_TEST_PASSWORD=sfms_test_only \
+            sfms-check php tests/database-backup.php

@@ -1,0 +1,13 @@
+# Automatic daily database backups
+
+SFMS creates a complete SQL database dump on the first authenticated GET page visit each day, using the installation timezone. A private lock prevents concurrent runs; a successful backup suppresses further runs that day. Failed attempts do not interrupt page rendering and retry on visits after 15 minutes. The Backups page displays the last successful backup and warns when today's backup is missing.
+
+This behavior follows the application onto its hosting server. It does not require the Windows scheduler. The previous local Windows task has been disabled. No request means no backup that day: for unconditional daily backups, the server administrator must schedule `php bin/backup-database.php` with cron or a hosting scheduler. The CLI and application use the same dump service and success status.
+
+Enabled by default; disable with `automatic_database_backup => false` in private configuration. Install MySQL `mysqldump` or PostgreSQL `pg_dump` on the server and configure `mysqldump_path` or `pg_dump_path` if not on PATH. PostgreSQL's client must support the database server version. The Render Docker image installs PostgreSQL 18 pg_dump and psql from the official PostgreSQL apt repository. CI verifies a synthetic PostgreSQL dump and restore using that image. Durable external storage must still be connected. The local MySQL dump and daily control behavior were tested.
+
+Backups are in `storage/backups/database-*.sql.gz`, outside the public directory. All schools and accounts are included. `last-success.json` records completion; failures append to `errors.log`. Dumps retain indefinitely; monitor disk capacity and copy to encrypted offsite storage. Ephemeral hosting storage is not a durable backup location; configure durable storage before deployment. SQL includes database-mode images but not photos in `uploads/`; copy those and configuration separately.
+
+Protect the directory using operating-system permissions. Credentials are passed in a temporary private client options/password file, removed after completion, rather than command arguments. MySQL needs SELECT, SHOW VIEW, TRIGGER, EVENT and routine inspection rights as applicable. InnoDB records use a consistent snapshot; avoid schema changes during dumps.
+
+To recover, decompress the SQL file and import it using the matching database client into a separate empty recovery database. Verify balances and access before switching the application. PostgreSQL dumps omit owners and privileges; configure those separately. Tenant JSON recovery is a separate workflow. A full recovery drill was not performed in this change.
